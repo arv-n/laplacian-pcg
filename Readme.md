@@ -9,6 +9,9 @@ The paper by Gergelits et al. you can access here for free: [arXiv version](http
 To use the presentation notebook interactively, you will need to have the Julia package [Pluto.jl](https://github.com/fonsp/Pluto.jl) installed. Along with the following dependencies:
 - LinearAlgebra
 - PyPlot.jl
+- IterativeSolvers.jl
+- Preconditioners.jl
+- Triangulate.jl
 
 Static (non-interactive) versions as PDF,HTML can be found under the same filename.
 
