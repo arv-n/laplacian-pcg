@@ -339,8 +339,61 @@ md"dofs(N) 1 $sl_N 3969"
 # ╔═╡ 5b465b46-71cc-11eb-397d-85c3fcce10ac
 md"""## Distribution functions"""
 
+# ╔═╡ 030777b6-71cf-11eb-2dce-1f5c5f99b597
+md"""Comparision between Laplace and ICHOL"""
+
+# ╔═╡ 1452ebd4-71cf-11eb-3903-ef7234203ff4
+md"N=49"
+
 # ╔═╡ 24c08780-71cd-11eb-2f2f-e1bc01955371
-md"![distfunc_N49](distfunc_N49.png)"
+md"![distfunc_N49](https://raw.githubusercontent.com/arv-n/laplacian-pcg/main/distfunc_N49.png)"
+
+# ╔═╡ 1d240d4c-71cf-11eb-09b8-6983615a4992
+md"N=3969"
+
+# ╔═╡ c9201808-71ce-11eb-0d1e-af3bdb657f89
+md"![distfunc_N3969](https://raw.githubusercontent.com/arv-n/laplacian-pcg/main/dist_func_N%3D3969.png)"
+
+# ╔═╡ 340f0494-71cf-11eb-0678-174d79dbef8c
+md"""## Main Results"""
+
+# ╔═╡ 42273880-71cf-11eb-25e8-77e494cc5a45
+md""">Theorem 3.1: (pairing the eigenvalues and the intervals $k(\mathcal{T}_j)$,$ j=1,...,N$).
+>>Let $\lambda_1,...\lambda_N$ be the eigenvalues of $L^{-1}A$ where A and L are the conforming FEM global stiffness and mass matrices respectively and let $k(x)$ be bounded and piecewise continuous. Then there exists a (possibly non unique) permutation $\pi$ such that the eigenvalues of the matrix $L^{-1}A$ satisfy, 
+>> $$\lambda_{\pi} \in k(\mathcal{T}_j)$$"""
+
+# ╔═╡ 6c91897e-71d0-11eb-1530-8b1fe21692e6
+md""">Corollary 3.2: (pairing the eigenvalues and the nodal values).
+>Using the same notation and assumptions from Theorem 3.1, consider any point $\hat{x}_j$ such that $\hat{x}_j \in \mathcal{T}_j$. Then the associated eigenvalue $\lambda_{\pi(j)}$ of the matrix $L^{-1}A$ 
+
+$$|\lambda_{\pi(j)}-k(\hat{x}_j)| \leq \sup_{x \in \mathcal{T}_j}|k(x) - k(\hat{x}_j)|$$"""
+
+# ╔═╡ b3bc1022-71d1-11eb-22f1-e7ff814684a0
+md"""## Main Results"""
+
+# ╔═╡ d9221816-71d1-11eb-1cf4-9166a9c456fd
+md"""**Theorem 3.1**"""
+
+# ╔═╡ bfa8ab34-71d1-11eb-0689-e1ef4f1552c2
+md"![distfunc_N3969](https://raw.githubusercontent.com/arv-n/laplacian-pcg/main/Thm3.1.png)"
+
+# ╔═╡ e462e1ce-71d1-11eb-1747-9374db5a9384
+md"""**Corollary 3.2**"""
+
+# ╔═╡ f3dc1c24-71d1-11eb-0d0d-4d9a3e663f1c
+md"![distfunc_N3969](https://raw.githubusercontent.com/arv-n/laplacian-pcg/main/Corollary.png)"
+
+# ╔═╡ 4f5e8b18-71d2-11eb-06bd-c1e048987ee7
+md""" ## Numerical Results"""
+
+# ╔═╡ b227b602-71d2-11eb-3166-cb56652dfa5f
+md"""**Illustration of Theorem 3.1 and Corollary 3.2**"""
+
+# ╔═╡ fff70918-71d3-11eb-1c48-93ada3377cb6
+md"""![distfunc_N3969](https://raw.githubusercontent.com/arv-n/laplacian-pcg/main/k(x)nodalvalues.png)"""
+
+# ╔═╡ 3e01ad42-71d4-11eb-1f92-8fbc59171e97
+
 
 # ╔═╡ a194d4fe-71ba-11eb-273b-0fcefe96bcc0
 md""" ## References
@@ -528,7 +581,7 @@ plotspectra([λ_A,λ_L,λ_AL],["A","L","A_L"])
 # ╟─3a4fc858-647c-11eb-0a23-e7c8ec8348c6
 # ╟─2c2f9998-647b-11eb-3ddc-11f90d029e3c
 # ╟─12755762-688c-11eb-14a3-479950c1a3a1
-# ╟─ed36e1ac-696f-11eb-00b8-5d6cc89a731e
+# ╠═ed36e1ac-696f-11eb-00b8-5d6cc89a731e
 # ╟─8852442c-6481-11eb-281c-e53ac9aa06f3
 # ╠═cd77adb2-64bd-11eb-1700-8dc2f703553d
 # ╟─85461a64-71b6-11eb-1153-01c5012c2d3d
@@ -573,7 +626,23 @@ plotspectra([λ_A,λ_L,λ_AL],["A","L","A_L"])
 # ╠═fc555ece-6970-11eb-01ea-c99033916c7d
 # ╠═ef26302c-68a4-11eb-29d7-730bda510b12
 # ╟─5b465b46-71cc-11eb-397d-85c3fcce10ac
-# ╠═24c08780-71cd-11eb-2f2f-e1bc01955371
+# ╟─030777b6-71cf-11eb-2dce-1f5c5f99b597
+# ╟─1452ebd4-71cf-11eb-3903-ef7234203ff4
+# ╟─24c08780-71cd-11eb-2f2f-e1bc01955371
+# ╟─1d240d4c-71cf-11eb-09b8-6983615a4992
+# ╟─c9201808-71ce-11eb-0d1e-af3bdb657f89
+# ╟─340f0494-71cf-11eb-0678-174d79dbef8c
+# ╟─42273880-71cf-11eb-25e8-77e494cc5a45
+# ╟─6c91897e-71d0-11eb-1530-8b1fe21692e6
+# ╟─b3bc1022-71d1-11eb-22f1-e7ff814684a0
+# ╟─d9221816-71d1-11eb-1cf4-9166a9c456fd
+# ╟─bfa8ab34-71d1-11eb-0689-e1ef4f1552c2
+# ╟─e462e1ce-71d1-11eb-1747-9374db5a9384
+# ╠═f3dc1c24-71d1-11eb-0d0d-4d9a3e663f1c
+# ╟─4f5e8b18-71d2-11eb-06bd-c1e048987ee7
+# ╟─b227b602-71d2-11eb-3166-cb56652dfa5f
+# ╟─fff70918-71d3-11eb-1c48-93ada3377cb6
+# ╠═3e01ad42-71d4-11eb-1f92-8fbc59171e97
 # ╟─a194d4fe-71ba-11eb-273b-0fcefe96bcc0
 # ╟─aebfc210-71c9-11eb-08b5-f7aba9ac895f
 # ╟─383a3b3e-66e8-11eb-1594-5934cb8587c5
