@@ -15,4 +15,10 @@ To use the presentation notebook interactively, you will need to have the Julia 
 
 Static (non-interactive) versions as PDF,HTML can be found under the same filename.
 
+### TODOs
+- Numerical experiments under different meshes and k(x)
+- ICHOL implementation
+- mendelsohn-dummel pairing
+- docs
+
 
