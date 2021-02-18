@@ -4,6 +4,15 @@
 using Markdown
 using InteractiveUtils
 
+# This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
+macro bind(def, element)
+    quote
+        local el = $(esc(element))
+        global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : missing
+        el
+    end
+end
+
 # ╔═╡ aa0f9f7e-6409-11eb-3125-1301a8b20ef9
 using PlutoUI,PyPlot,SparseArrays,
 IterativeSolvers,Preconditioners,
@@ -128,18 +137,222 @@ function generate_tensor_mesh(meshObj::triMesh)
 	meshObj.pointlist = pointlist; meshObj.trianglelist = trianglelist; 
 end
 
-# ╔═╡ 1c2c594a-69ef-11eb-0419-3bca2ee1d692
-N=81;
+# ╔═╡ 85461a64-71b6-11eb-1153-01c5012c2d3d
+md"""
+## Laplacian Preconditioning of Elliptic PDEs: Localization of the Eigenvalues of the Discretized operator
 
-# ╔═╡ 1b8a3096-64c4-11eb-21c6-6b0b43f7e84d
-e1 = triMesh(dofs=N);
+Gergelits, T., Mardal, K. A., Nielsen, B. F., & Strakos, Z. (2019). SIAM Journal on Numerical Analysis.
+
+Seminar **Numerical Linear Algebra, TU Berlin**
+
+
+**Arvind Nayak, February 18 2021**
+"""
+
+# ╔═╡ ec9dea62-71b7-11eb-0c8d-ddbeaad47e00
+md""" ## **Contents**
+- Overview
+- Motivation
+- Elliptic PDEs and FEM
+- The Conjugate Gradient Method
+- Main Results
+- Supporting numerical experiments
+- Conclusion
+"""
+
+# ╔═╡ 8eae2aa4-71b8-11eb-1e08-eb530bbf3b44
+md""" ## Introduction """
+
+# ╔═╡ 9fc55114-71b8-11eb-256e-0fc33ea16a4d
+md"""
+- Analysis of Krylov subspace solvers for Hermitian matrices relies on their spectral properties.
+
+- One seeks a preconditioner which yields parameter independent bounds for extreme eigenvalues. 
+
+- *Operator preconditioning* is constructing preconditioners for "discrete linear operators arisen from a Galerkin approach" [^2]. Matching Galerkin discretizations of operators of complementary mapping properties.
+"""
+
+# ╔═╡ 829c6982-71b9-11eb-3e41-77e1d8d323f4
+md"""Given a continuous bijective linear operator $A : V \mapsto W$ on function spaces $V$ and $W$, and another isomorphism $B : W \mapsto V$, then $BA$ will provide an endomorphism of $V$.[^2]""" 
+
+# ╔═╡ 99b9c812-71bb-11eb-0511-972a2663b3a4
+md"""The mapping properties between appropriate *Sobolev spaces* in order to derive a discrete preconditioner considered. [^3]""" 
+
+# ╔═╡ 3a438aa0-71bc-11eb-1eac-df30d59b8104
+md"""Bounds for the required number of Krylov subspace iterations can become independent of the mesh size and other important parameters."""
+
+# ╔═╡ 797a74d2-71bb-11eb-0766-23e66d9a5c18
+md"""## Motivation"""
+
+# ╔═╡ 8cf8b7da-71bb-11eb-12ae-cb2d8054948f
+md"""But what happens to convergence for problems with spatially variable coefficients?"""
+
+# ╔═╡ 92281bfa-71bc-11eb-2dee-1907ead77773
+md"""- The condition number estimate provided by *Operator Preconditioning* is of limited value.
+
+- Convergence bounds based on single number do not capture adaption of Krylov subspace methods applied to non linear input data (the matrix and initial residual)
+
+- Whole information of spectra needed to capture actual convergence behavior.
+
+- Large outlying eigenvalues (or well separated clusters of large eigenvalues) can lead to *acceleration* of CG convergence. (assuming exact arithmetic)
+
+- In practice, using finite precision computations, it can cause deterioration of the convergence rate."""
+
+# ╔═╡ 6ea24578-71be-11eb-3a8d-33fe0014b0e8
+md"""## Motivation"""
+
+# ╔═╡ 71099b0e-71be-11eb-095f-2581ed5e01c3
+md"""But what happens to convergence for problems with spatially variable coefficients?"""
+
+# ╔═╡ 7bed953e-71be-11eb-0071-757715aab843
+md"""- The condition number estimate provided by *Operator Preconditioning* is of limited value.
+
+- Convergence bounds based on single number do not capture adaption of Krylov subspace methods applied to non linear input data (the matrix and initial residual)
+
+- Whole information of spectra needed to capture actual convergence behavior.
+
+- Large outlying eigenvalues (or well separated clusters of large eigenvalues) can lead to *acceleration* of CG convergence. (assuming exact arithmetic)
+
+- In practice, using finite precision computations, it can cause deterioration of the convergence rate."""
+
+# ╔═╡ 87d83dae-71be-11eb-1c98-e729954a844f
+md"> We need a preconditioner that leads to a *favorable* distribution of the eigenvalues of preconditioned (Hermitian) matrix" 
+
+# ╔═╡ db509706-71be-11eb-35e4-d5823c530c2a
+md"## Mathematical Description"
+
+# ╔═╡ 18f2455c-71bf-11eb-3360-81ef505644e4
+md"""Consider a self-adjoint second order elliptic PDE
+Consider a self-adjoint second order elliptic PDE in the form, where
+```math
+\begin{aligned}
+& -\nabla\cdot(k(x)\nabla u) = f,
+& &x \in \Omega \subset \mathbb{R}^d\\
+&\hspace{1.5cm} u = 0, 
+& &x \in \partial\Omega
+\end{aligned}
+```
+and the corresponding generalized eigenvalue problem, 
+```math
+\begin{aligned}
+& -\nabla\cdot(k(x)\nabla u) = \lambda\Delta u ,
+& &x \in \Omega \\
+&\hspace{1.5cm} u = 0, 
+& &x \in \partial\Omega
+\end{aligned}
+```
+We see that $f \in L^2(\Omega)$, and $k(x):\mathbb{R}^d \rightarrow \mathbb{R}$ \
+
+$k(x)\geq \alpha > 0$ 
+"""
+
+# ╔═╡ cb8b1fdc-71c1-11eb-1c5a-79d4213317f0
+md"""### Finite Element formulation"""
+
+# ╔═╡ 7aed1ca2-71c0-11eb-34e9-9b8c3f1d3445
+md"""Let $V_h \subset H_{0}^1(\Omega)$. We seek $u_h \in V_h$ such that, 
+```math
+\begin{aligned}
+& \mathcal{A_h}u_h = f 
+& & (\text{respectively} \mathcal{A_h}u_h = \lambda\mathcal{L_h}u_h)
+\end{aligned}
+```
+where, discretization is via conforming FE method using Lagrange elements, leads to 
+$\mathcal{A}_h,\mathcal{L}_h: V_h \rightarrow V_h^{\#}$
+"""
+
+# ╔═╡ 4520e0e2-71c3-11eb-19b0-9763903df14c
+md"Finite dimensional subspace $V_h$ is spanned by piecewise polynomial basis functions $\phi_1,\dots,\phi_N$ with the local supports."
+
+# ╔═╡ abae667e-71c3-11eb-368b-cfd9e5295b7c
+md"""We then have $\mathcal{T}_i = \text{supp}(\phi_i)$, $i=1,\dots,N$"""
+
+# ╔═╡ 194ae372-71c4-11eb-16a6-0dc3f89736e7
+md"""Finally the matrix representations,
+
+$$[A]_{i,j} = \int_{\Omega} \nabla\phi_i\cdot k\nabla\phi_j$$
+$$[L]_{i,j} = \int_{\Omega} \nabla\phi_i\cdot \nabla\phi_j$$
+$i,j = 1,\dots,N$.
+"""
+
+# ╔═╡ 96d1f4f2-71c4-11eb-140d-1382f39fe066
+md"""## A bit about CG convergence"""
+
+# ╔═╡ a1f53f76-71c4-11eb-112f-0f9c00f74390
+md"""The energy norm of the error in CG can be given as, 
+
+$$||x-x_j||_A^2= \min_{p\in\mathcal{P}_j}||p(A)(x-x_0)||^2_A$$, $j=1,2,...$"""
+
+# ╔═╡ 76a94e90-71c5-11eb-352b-d1cc8edee31e
+md"""Using the spectral decomposition of the matrix $A$ with eigenvalues $\lambda_1,\dots,\lambda_N$ with $v_1,\dots,v_N$ associated orthonormal eigenvectors,"""
+
+# ╔═╡ bfefdf7e-71c5-11eb-0d02-89d589d49170
+md"""We can rewrite it as, 
+
+$$||x-x_j||_A^2= ||r_0||^2\sum_{l=1}^N \omega_l \frac{(p_j^{CG}(\lambda_l))^2}{\lambda_l}$$
+with,
+$r_0 = b-Ax_0$, $\omega_l = (z,v_l)^2$, $l=1,\dots,N$ and $z=r_0/||r_0||$"""
+
+# ╔═╡ 27c70514-71c6-11eb-1703-2d77910f2002
+md"""A simplified relation given by, 
+
+$$\frac{||x-x_j||_A}{||x-x_0||_A}\leq 2 \left(\frac{\sqrt{\kappa(A)}-1}{\sqrt{\kappa(A)}+1}\right)^j$$
+where $\kappa(A) = \lambda_N/\lambda_1$"""
+
+# ╔═╡ 0a40431a-71c7-11eb-2807-bbaec4e2c21c
+md""" Recall the limitations of this bound"""
+
+# ╔═╡ 5c60b184-71c7-11eb-1673-37851c277024
+md"# An Example"
+
+# ╔═╡ ea4e69f6-71cb-11eb-379f-23f54f16a48f
+md"""Let $k(x)$ be piecewise constant on the individual subdomains $\Omega_i$, $i=1,2,3,4$ $k_1, k_3 = 161.45$ and $k_2, k_4 = 1$."""
+
+# ╔═╡ fdc1ed30-71c8-11eb-3f5c-3554de976606
+begin
+	sl_N = @bind n Slider(1:1:63, default=9);
+	md"""
+	dofs(N) = 1 $sl_N 3969
+	"""
+end
+
+# ╔═╡ e66e4a5a-71c8-11eb-20d1-896fda01b251
+md"# An Example"
+
+# ╔═╡ 509b94ec-71ca-11eb-352c-d784033c5dd4
+md"dofs(N) 1 $sl_N 3969"
+
+# ╔═╡ 305e5024-71cb-11eb-12b5-31da272983dc
+md"## Let us plot the spectrum"
+
+# ╔═╡ 4065df58-71cd-11eb-1250-d5b2c826e3cb
+md"""The preconditioned system can be formulated as, 
+
+$$A_L(L^{1/2}x) = L^{-1/2}b$$, where 
+
+$$A_L = L^{-1/2}AL^{1/2}$$
+"""
+
+# ╔═╡ 9b351cb4-71cb-11eb-379a-eddd876a0c87
+md"dofs(N) 1 $sl_N 3969"
+
+# ╔═╡ 5b465b46-71cc-11eb-397d-85c3fcce10ac
+md"""## Distribution functions"""
+
+# ╔═╡ 24c08780-71cd-11eb-2f2f-e1bc01955371
+md"![distfunc_N49](distfunc_N49.png)"
+
+# ╔═╡ a194d4fe-71ba-11eb-273b-0fcefe96bcc0
+md""" ## References
+[^1]: Gergelits, T., Mardal, K. A., Nielsen, B. F., & Strakos, Z. (2019). Laplacian preconditioning of elliptic PDEs: Localization of the eigenvalues of the discretized operator. SIAM Journal on Numerical Analysis, 57(3), 1369-1394.
+[^2]: Hiptmair, R. (2006). Operator preconditioning. Computers & Mathematics with Applications, 52(5), 699-706."""
+
+# ╔═╡ aebfc210-71c9-11eb-08b5-f7aba9ac895f
+N=n^2;
 
 # ╔═╡ 383a3b3e-66e8-11eb-1594-5934cb8587c5
 k(x::Float64,y::Float64) = 161.45*((x<=0.) & (y<=0.)) + (1)*((x>0.) & (y<=0.)) + 161.45*((x>0.) & (y>0.)) + 1*((x<=0.) & (y>0.))
 #coefficient
-
-# ╔═╡ 1480af62-64ad-11eb-28a7-d34225155b25
-generate_tensor_mesh(e1);
 
 # ╔═╡ 79af845a-64d8-11eb-3458-1f654490b456
 function generatetransformation2D(e,e2,x,y)
@@ -233,9 +446,6 @@ function global_assemble(meshObj::triMesh)
 	
 end
 
-# ╔═╡ ddd54870-673a-11eb-01a5-ffe24cc7a2ad
-A,L,rhs = global_assemble(e1);
-
 # ╔═╡ 3309239c-6723-11eb-01ac-ab241fb96a42
 function solve_fem(meshObj,A,L,rhs,pcg="default")	 
 	u = zeros(meshObj.np); 
@@ -255,14 +465,29 @@ function solve_fem(meshObj,A,L,rhs,pcg="default")
 	return u,ch
 end
 
+# ╔═╡ 1b8a3096-64c4-11eb-21c6-6b0b43f7e84d
+e1 = triMesh(dofs=N);
+
+# ╔═╡ 1480af62-64ad-11eb-28a7-d34225155b25
+generate_tensor_mesh(e1);
+
+# ╔═╡ ddd54870-673a-11eb-01a5-ffe24cc7a2ad
+A,L,rhs = global_assemble(e1);
+
+# ╔═╡ fc555ece-6970-11eb-01ea-c99033916c7d
+λ_L,=eigs(L,nev=81,which=:SM);
+
+# ╔═╡ ef26302c-68a4-11eb-29d7-730bda510b12
+λ_A,=eigs(A,nev=81,which=:SM);
+
 # ╔═╡ 89f1d0aa-6723-11eb-1b3b-e5a761f2fa18
 u,ch = solve_fem(e1,A,L,rhs,"cg");
 
-# ╔═╡ ea11ad48-6723-11eb-25fe-7116c904b723
-pl = e1.pointlist; tl = e1.trianglelist;
-
 # ╔═╡ 6ae5e60a-64f9-11eb-242a-c9e6bf68f24c
-plotpair(pl,tl,u)
+begin
+	pl = e1.pointlist; tl = e1.trianglelist;
+	plotpair(pl,tl,u)
+end
 
 # ╔═╡ abff15fe-6890-11eb-27ca-258853f71f8c
 _,ch2 = solve_fem(e1,A,L,rhs,"ilu");
@@ -285,12 +510,6 @@ AL=Linv*A*Linv;
 # ╔═╡ 21fcaac2-692d-11eb-38ca-0be1fae1718e
 cond(AL)
 
-# ╔═╡ ef26302c-68a4-11eb-29d7-730bda510b12
-λ_A,=eigs(A,nev=81,which=:SM);
-
-# ╔═╡ fc555ece-6970-11eb-01ea-c99033916c7d
-λ_L,=eigs(L,nev=81,which=:SM);
-
 # ╔═╡ ae8804d4-6971-11eb-0cbf-cfc0b717b388
 begin
 	λ_AL,v_AL=eigen(AL);
@@ -301,30 +520,7 @@ begin
 end
 
 # ╔═╡ 7cff19fe-696f-11eb-27e0-eb6fb8451d61
-plotspectra([λ_A,λ_L,λ_AL],["A","L","AL"])
-
-# ╔═╡ e75ba2a0-6982-11eb-0145-6f79898b4d43
-v̄L=zeros(N,N);ωL=zeros(N);
-
-# ╔═╡ 96916bc4-6983-11eb-2c9b-93ff759b8f02
-qL=Linv*rhs/norm(Linv*rhs);
-
-# ╔═╡ 4c27db96-6982-11eb-32f4-4d27af784835
-for i = 1:N
-	v_AL[:,i]=real(v_AL[:,i]);
-	v̄L[:,i]=v_AL[:,i];
-	ωL[i] = dot(v̄L[:,i],qL)^2;
-end
-
-# ╔═╡ cad53db6-6983-11eb-3500-c10549dcdd48
-clf();PyPlot.plot(λ_AL,sort(ωL),"-x");PyPlot.matplotlib.pyplot.gca().set_yscale("log");gcf()
-
-# ╔═╡ cfd25188-69ff-11eb-3ed8-bd7044663058
-#TODOS: - k(x,y) vs Eigenvals for the 4 examples
-# - mendelsohn-pairing 
-# - ichol implementation
-# - writing: (prelim outline: -intro-literature-motivatingexample-proof-resultingegs-explainations-conclusions
-# - cosmetic changes
+plotspectra([λ_A,λ_L,λ_AL],["A","L","A_L"])
 
 # ╔═╡ Cell order:
 # ╟─d515e2f4-640a-11eb-1a73-159e6d21533e
@@ -335,32 +531,64 @@ clf();PyPlot.plot(λ_AL,sort(ωL),"-x");PyPlot.matplotlib.pyplot.gca().set_yscal
 # ╟─ed36e1ac-696f-11eb-00b8-5d6cc89a731e
 # ╟─8852442c-6481-11eb-281c-e53ac9aa06f3
 # ╠═cd77adb2-64bd-11eb-1700-8dc2f703553d
-# ╠═1c2c594a-69ef-11eb-0419-3bca2ee1d692
-# ╠═1b8a3096-64c4-11eb-21c6-6b0b43f7e84d
-# ╠═383a3b3e-66e8-11eb-1594-5934cb8587c5
+# ╟─85461a64-71b6-11eb-1153-01c5012c2d3d
+# ╟─ec9dea62-71b7-11eb-0c8d-ddbeaad47e00
+# ╟─8eae2aa4-71b8-11eb-1e08-eb530bbf3b44
+# ╟─9fc55114-71b8-11eb-256e-0fc33ea16a4d
+# ╟─829c6982-71b9-11eb-3e41-77e1d8d323f4
+# ╟─99b9c812-71bb-11eb-0511-972a2663b3a4
+# ╟─3a438aa0-71bc-11eb-1eac-df30d59b8104
+# ╟─797a74d2-71bb-11eb-0766-23e66d9a5c18
+# ╟─8cf8b7da-71bb-11eb-12ae-cb2d8054948f
+# ╟─92281bfa-71bc-11eb-2dee-1907ead77773
+# ╟─6ea24578-71be-11eb-3a8d-33fe0014b0e8
+# ╟─71099b0e-71be-11eb-095f-2581ed5e01c3
+# ╟─7bed953e-71be-11eb-0071-757715aab843
+# ╟─87d83dae-71be-11eb-1c98-e729954a844f
+# ╟─db509706-71be-11eb-35e4-d5823c530c2a
+# ╟─18f2455c-71bf-11eb-3360-81ef505644e4
+# ╟─cb8b1fdc-71c1-11eb-1c5a-79d4213317f0
+# ╟─7aed1ca2-71c0-11eb-34e9-9b8c3f1d3445
+# ╟─4520e0e2-71c3-11eb-19b0-9763903df14c
+# ╟─abae667e-71c3-11eb-368b-cfd9e5295b7c
+# ╟─194ae372-71c4-11eb-16a6-0dc3f89736e7
+# ╟─96d1f4f2-71c4-11eb-140d-1382f39fe066
+# ╟─a1f53f76-71c4-11eb-112f-0f9c00f74390
+# ╟─76a94e90-71c5-11eb-352b-d1cc8edee31e
+# ╟─bfefdf7e-71c5-11eb-0d02-89d589d49170
+# ╟─27c70514-71c6-11eb-1703-2d77910f2002
+# ╟─0a40431a-71c7-11eb-2807-bbaec4e2c21c
+# ╟─5c60b184-71c7-11eb-1673-37851c277024
+# ╟─ea4e69f6-71cb-11eb-379f-23f54f16a48f
+# ╟─fdc1ed30-71c8-11eb-3f5c-3554de976606
+# ╠═6ae5e60a-64f9-11eb-242a-c9e6bf68f24c
+# ╟─e66e4a5a-71c8-11eb-20d1-896fda01b251
+# ╟─509b94ec-71ca-11eb-352c-d784033c5dd4
+# ╠═c09b2a4a-6896-11eb-0289-cb57389c9a32
+# ╠═21fcaac2-692d-11eb-38ca-0be1fae1718e
+# ╟─305e5024-71cb-11eb-12b5-31da272983dc
+# ╟─4065df58-71cd-11eb-1250-d5b2c826e3cb
+# ╟─9b351cb4-71cb-11eb-379a-eddd876a0c87
+# ╠═7cff19fe-696f-11eb-27e0-eb6fb8451d61
+# ╠═fc555ece-6970-11eb-01ea-c99033916c7d
+# ╠═ef26302c-68a4-11eb-29d7-730bda510b12
+# ╟─5b465b46-71cc-11eb-397d-85c3fcce10ac
+# ╠═24c08780-71cd-11eb-2f2f-e1bc01955371
+# ╟─a194d4fe-71ba-11eb-273b-0fcefe96bcc0
+# ╟─aebfc210-71c9-11eb-08b5-f7aba9ac895f
+# ╟─383a3b3e-66e8-11eb-1594-5934cb8587c5
 # ╠═1480af62-64ad-11eb-28a7-d34225155b25
 # ╟─79af845a-64d8-11eb-3458-1f654490b456
 # ╟─f906340a-64f5-11eb-2dd3-7110e723d06c
 # ╟─8a1f0418-64f7-11eb-00bc-27f5c923357c
 # ╟─48c11296-64cc-11eb-12e6-c95142efa7c1
+# ╟─3309239c-6723-11eb-01ac-ab241fb96a42
+# ╠═1b8a3096-64c4-11eb-21c6-6b0b43f7e84d
 # ╠═ddd54870-673a-11eb-01a5-ffe24cc7a2ad
-# ╠═3309239c-6723-11eb-01ac-ab241fb96a42
 # ╠═89f1d0aa-6723-11eb-1b3b-e5a761f2fa18
-# ╠═ea11ad48-6723-11eb-25fe-7116c904b723
-# ╠═6ae5e60a-64f9-11eb-242a-c9e6bf68f24c
 # ╠═abff15fe-6890-11eb-27ca-258853f71f8c
 # ╠═bf263a14-6957-11eb-1746-1741c11adf4d
-# ╠═c09b2a4a-6896-11eb-0289-cb57389c9a32
 # ╠═a4bbc224-6949-11eb-3e01-89f56bbf93a4
 # ╠═1ef89e6c-6969-11eb-22ca-bf8042ac79e0
 # ╠═0059f2e4-692d-11eb-2f18-1987e20dc34b
-# ╠═21fcaac2-692d-11eb-38ca-0be1fae1718e
-# ╠═ef26302c-68a4-11eb-29d7-730bda510b12
-# ╠═fc555ece-6970-11eb-01ea-c99033916c7d
 # ╟─ae8804d4-6971-11eb-0cbf-cfc0b717b388
-# ╠═7cff19fe-696f-11eb-27e0-eb6fb8451d61
-# ╠═e75ba2a0-6982-11eb-0145-6f79898b4d43
-# ╠═96916bc4-6983-11eb-2c9b-93ff759b8f02
-# ╠═4c27db96-6982-11eb-32f4-4d27af784835
-# ╠═cad53db6-6983-11eb-3500-c10549dcdd48
-# ╠═cfd25188-69ff-11eb-3ed8-bd7044663058
