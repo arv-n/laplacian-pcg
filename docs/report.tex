@@ -1,0 +1,49 @@
+% load the preamble with latex commands / classes
+\include{preamble}
+
+\begin{document}
+% global setting for source code display with listings
+\lstset{basicstyle=\scriptsize\ttfamily,language={[LaTeX]TeX}}
+
+%Pagenumbers in arabic
+\pagenumbering{arabic}
+
+% Headers and footers
+\pagestyle{scrheadings}
+\clearscrheadfoot
+
+\ihead{\leftmark}
+\ohead{}
+\cfoot{\pagemark}
+
+%titlepage
+\input{titlepage}
+
+\input{body}
+
+%bibliography
+\clearpage
+\printbibliography[heading=bibintoc]
+
+% %list of figures
+% \clearpage
+% \addcontentsline{toc}{section}{\listfigurename}
+% \listoffigures
+
+% %list of tables
+% \clearpage
+% \addcontentsline{toc}{section}{\listtablename}
+% \listoftables
+
+% attachments detailed datatables or diagrams or long calculations
+% to go in appendix
+%\clearpage
+%\appendix
+%\input{}
+
+\end{document}
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: t
+%%% End:

@@ -1,0 +1,131 @@
+% Document class and language settings
+\documentclass[12pt, oneside, paper=A4, DIV=15, BCOR=0mm, abstract=true, headings=small]{scrartcl}
+\usepackage[english]{babel}
+\usepackage[utf8]{inputenc}
+
+% Font
+%LModern
+\usepackage{lmodern}
+%Libertine
+%\usepackage{libertinus}
+%\usepackage{libertinust1math}
+
+\usepackage[T1]{fontenc}
+
+% Control headers and footers with scrlayer-scrpage
+% Dividing line above and below
+\usepackage[headsepline, footsepline,automark]{scrlayer-scrpage}
+
+ %Math, symbols, units, chemistry
+\usepackage{amsmath,amssymb}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}[theorem]{Corollary}
+\newtheorem{conjecture}{Conjecture}
+%\usepackage{amsxtra} extra math symbs
+%\usepackage{siunitx}  
+
+% Typography
+\usepackage[auto]{microtype}
+\clubpenalty = 10000
+\widowpenalty = 10000
+\displaywidowpenalty = 10000
+
+% integration of images, tables, PDF pages, source code
+\usepackage{graphicx}
+\usepackage{subfig}
+\graphicspath{{./graphics/}}
+\usepackage{multirow, multicol, booktabs}
+\usepackage{threeparttable}
+\usepackage{longtable}
+\usepackage{rotating}
+\usepackage{ltablex}
+\usepackage{subfig}
+\captionsetup[subtable]{position=bottom}
+\usepackage{pdfpages}
+\usepackage{listings}
+
+% Representation of URL
+\usepackage{url}
+\urlstyle{same}
+
+% Footnotes with tables
+\usepackage{footnote}
+\makesavenoteenv{tabular} 
+
+% Review and control
+\usepackage{todonotes}
+\usepackage{blindtext}
+
+% Presentation of references
+\usepackage[
+backend=biber,
+style=iso-numeric,
+citestyle=numeric-comp,
+maxbibnames=2,
+firstinits=true
+]{biblatex}
+
+\renewcommand*{\labelnamepunct}{\addcolon\addspace}
+
+% bib file
+\bibliography{references}
+
+% Footnotes
+% Marking in the footnote itself is neither superscript nor lower
+% \deffootnote{1em}{1em}{\thefootnotemark\ }
+% left-aligned footnote markers
+\deffootnote{1.5em}{1em}{%
+  \makebox[1.5em][l]{\thefootnotemark}%
+}
+
+% Do not break footnotes
+\interfootnotelinepenalty=10000
+
+% Design of the picture caption and table headings as well as title page information
+\addtokomafont{caption}{\small}
+\setkomafont{captionlabel}{\sffamily\bfseries}
+\setkomafont{subject}{\Large\bfseries}
+\setkomafont{author}{\normalfont}
+\setkomafont{date}{\normalfont}
+\setkomafont{publishers}{\normalfont}
+
+
+\makeatletter
+% \renewcommand{\l@section}{\@dottedtocline{1}{0em}{0em}}
+% \renewcommand{\l@subsection}{\@dottedtocline{2}{4ex}{3.6em}}
+% \g@addto@macro{\@afterheading}{\vspace{-0.25\baselineskip}}
+\renewcommand{\l@section}{\@dottedtocline{1}{0ex}{1.8em}}
+\renewcommand{\l@subsection}{\@dottedtocline{2}{1.8em}{2.7em}}
+% \g@addto@macro{\@afterheading}{\vspace{-0.25\baselineskip}}
+\makeatother
+
+
+% Table environments with font size 10 and 7
+\newenvironment{tabular10}{%
+  \fontsize{10}{12}\selectfont\tabular
+}{%
+  \endtabular
+}
+
+\newenvironment{tabular7}{%
+  \fontsize{7}{12}\selectfont\tabular
+}{%
+  \endtabular
+}
+
+% References, pdf-files
+% Update information if necessary!
+\usepackage[
+pdftitle={PaperSummary},
+pdfsubject={},
+pdfauthor={Arvind Nayak},
+pdfkeywords={Academic Report,Summary},  
+% Do not frame left
+hidelinks]{hyperref}
+
+
+%%% Local Variables:
+%%% mode: latex
+%%% TeX-master: "report"
+%%% End:
